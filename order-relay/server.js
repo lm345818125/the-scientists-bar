@@ -112,6 +112,14 @@ async function forwardToOpenClaw({ guest, drink }) {
   }
 }
 
+function logEvent(obj) {
+  try {
+    console.log(JSON.stringify({ ts: new Date().toISOString(), ...obj }));
+  } catch {
+    // ignore
+  }
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
@@ -145,11 +153,13 @@ const server = http.createServer(async (req, res) => {
 
   const ip = (req.socket.remoteAddress || 'unknown').replace('::ffff:', '');
   if (!rateLimitOk(ip)) {
+    logEvent({ event: 'rate_limited', ip, url: req.url });
     return sendJson(res, 429, { ok: false, error: 'rate_limited' });
   }
 
   const token = (req.headers['x-order-token'] || '').toString().trim();
   if (token !== ORDER_TOKEN) {
+    logEvent({ event: 'unauthorized', ip, url: req.url });
     return sendJson(res, 401, { ok: false, error: 'unauthorized' });
   }
 
@@ -161,10 +171,15 @@ const server = http.createServer(async (req, res) => {
     const drink = cleanStr(json.drink, 80);
 
     if (!guest || !drink) {
+      logEvent({ event: 'bad_request', ip, url: req.url, error: 'missing_fields' });
       return sendJson(res, 400, { ok: false, error: 'missing_fields' });
     }
 
+    logEvent({ event: 'order_received', ip, url: req.url, guest, drink });
+
     await forwardToOpenClaw({ guest, drink });
+
+    logEvent({ event: 'order_forwarded', ip, guest, drink });
     return sendJson(res, 200, { ok: true });
   } catch (e) {
     return sendJson(res, 500, { ok: false, error: e.message || 'server_error' });
@@ -173,5 +188,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`order relay listening on http://${HOST}:${PORT}/(bar-orders|gmail-pubsub)`);
-  console.log(`forwarding to OpenClaw: ${openclaw.wakeUrl}`);
+  console.log(`forwarding to OpenClaw agent hook: ${openclaw.agentUrl}`);
 });
