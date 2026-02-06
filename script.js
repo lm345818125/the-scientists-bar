@@ -140,16 +140,33 @@
     const publicToken = String(cfg.ORDER_PUBLIC_TOKEN || "").trim();
     if (publicToken) headers["x-order-token"] = publicToken;
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`Order failed (${res.status}). ${text}`);
+    // Avoid hanging forever if the endpoint is unreachable (common on captive Wi‑Fi).
+    const ctrl = new AbortController();
+    const timeoutMs = 8000;
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        signal: ctrl.signal,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Order failed (${res.status}). ${text}`);
+      }
+
+      return true;
+    } catch (err) {
+      if (String(err?.name || "") === "AbortError") {
+        throw new Error("Couldn’t reach the bar order server (timeout). Try again, or message the host.");
+      }
+      throw err;
+    } finally {
+      clearTimeout(t);
     }
-    return true;
   }
 
   function fallbackSend(payload) {
