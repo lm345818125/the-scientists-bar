@@ -149,7 +149,8 @@ const server = http.createServer(async (req, res) => {
   const allowedPaths = ['/', '/bar-orders', '/gmail-pubsub'];
 
   // Simple reachability check (lets guests verify connectivity in a browser)
-  if (req.method === 'GET' && (req.url === '/healthz' || req.url === '/')) {
+  // Note: Funnel is currently mounted at /gmail-pubsub, and Serve may strip prefixes.
+  if (req.method === 'GET' && (req.url === '/healthz' || req.url === '/' || req.url === '/gmail-pubsub' || req.url === '/bar-orders')) {
     return sendJson(res, 200, { ok: true, service: 'the-scientists-order-relay' });
   }
 
