@@ -97,9 +97,19 @@
     }
   }
 
+  function purgeGuestHostUi() {
+    // Defense-in-depth: if an older cached HTML still contains the button,
+    // remove it unless we're in host mode.
+    if (isHostMode()) return;
+    const oldBtn = document.getElementById("toggleOpenBtn");
+    if (oldBtn) oldBtn.remove();
+  }
+
   // Host controls (initial + when URL hash changes)
+  purgeGuestHostUi();
   renderHostControls();
   window.addEventListener("hashchange", () => {
+    purgeGuestHostUi();
     renderHostControls();
   });
 
