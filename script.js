@@ -160,8 +160,14 @@
 
       return true;
     } catch (err) {
-      if (String(err?.name || "") === "AbortError") {
+      const name = String(err?.name || "");
+      const msg = String(err?.message || err || "");
+      if (name === "AbortError") {
         throw new Error("Couldn’t reach the bar order server (timeout). Try again, or message the host.");
+      }
+      // Chrome often reports network/CORS issues as TypeError: Failed to fetch
+      if (name === "TypeError" && /failed to fetch/i.test(msg)) {
+        throw new Error("Couldn’t reach the bar order server. Check your connection (Wi‑Fi/cellular) and try again.");
       }
       throw err;
     } finally {
