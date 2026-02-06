@@ -78,7 +78,7 @@ async function forwardToOpenClaw({ guest, drink }) {
   // Use /hooks/agent so the payload turns into an actual WhatsApp delivery.
   // (/hooks/wake would only enqueue a system event inside the main session.)
   const message = [
-    'Send a WhatsApp message to Mei with this exact content (no extra commentary):',
+    'Send a WhatsApp message to +12166472995 with this exact content (no extra commentary):',
     '',
     'the scientists order',
     `- Guest: ${guest}`,
