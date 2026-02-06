@@ -47,7 +47,7 @@
       el.disabled = !isOpen;
     });
 
-    toggleOpenBtn.textContent = isOpen ? "Close bar" : "Open bar";
+    if (toggleOpenBtn) toggleOpenBtn.textContent = isOpen ? "Close bar" : "Open bar";
 
     if (!isOpen) setStatus("Bar is currently closed.");
     else setStatus("");
