@@ -9,7 +9,7 @@
 
   const openPill = document.getElementById("openPill");
   const hostControls = document.getElementById("hostControls");
-  const toggleOpenBtn = document.getElementById("toggleOpenBtn");
+  let toggleOpenBtn = document.getElementById("toggleOpenBtn");
   const hostSetupDetails = document.getElementById("hostSetupDetails");
 
   const STORAGE_KEY = "the-scientists:barOpen";
@@ -63,17 +63,37 @@
   }
 
   let hostWired = false;
+  function ensureHostButton() {
+    if (!hostControls) return null;
+
+    // Don’t keep host UI in the guest DOM. Create it only in host mode.
+    if (!toggleOpenBtn) {
+      const btn = document.createElement("button");
+      btn.className = "ghost";
+      btn.id = "toggleOpenBtn";
+      btn.type = "button";
+      btn.textContent = "Close bar";
+      hostControls.appendChild(btn);
+      toggleOpenBtn = btn;
+    }
+
+    return toggleOpenBtn;
+  }
+
   function renderHostControls() {
     const enabled = isHostMode();
 
     if (hostControls) hostControls.hidden = !enabled;
     if (hostSetupDetails) hostSetupDetails.hidden = !enabled;
 
-    if (enabled && !hostWired && toggleOpenBtn) {
-      hostWired = true;
-      toggleOpenBtn.addEventListener("click", () => {
-        setBarOpen(!getBarOpen());
-      });
+    if (enabled) {
+      const btn = ensureHostButton();
+      if (btn && !hostWired) {
+        hostWired = true;
+        btn.addEventListener("click", () => {
+          setBarOpen(!getBarOpen());
+        });
+      }
     }
   }
 
