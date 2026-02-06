@@ -14,19 +14,72 @@
   const hostSetupDetails = document.getElementById("hostSetupDetails");
 
   const STORAGE_KEY = "the-scientists:barOpen";
+  let barOpenCached = null; // null means unknown (use local fallback)
 
   function setStatus(msg) {
     statusEl.textContent = msg;
   }
 
   function getBarOpen() {
+    // Prefer server state when available so guests all see the same OPEN/CLOSED.
+    if (typeof barOpenCached === "boolean") return barOpenCached;
+
+    // Fallback: per-device local storage.
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw === null) return !!cfg.BAR_OPEN_DEFAULT;
     return raw === "true";
   }
 
-  function setBarOpen(next) {
+  function setLocalBarOpen(next) {
     localStorage.setItem(STORAGE_KEY, String(!!next));
+    renderBarState();
+  }
+
+  async function refreshBarState() {
+    if (!endpoint) return;
+
+    try {
+      const res = await fetch(`${endpoint}?barState=1`, { method: "GET", cache: "no-store" });
+      if (!res.ok) return;
+      const json = await res.json().catch(() => null);
+      if (json && typeof json.barOpen === "boolean") {
+        barOpenCached = json.barOpen;
+        renderBarState();
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function setRemoteBarOpen(next) {
+    if (!endpoint) {
+      setLocalBarOpen(next);
+      return;
+    }
+
+    const headers = { "Content-Type": "application/json" };
+    const publicToken = String(cfg.ORDER_PUBLIC_TOKEN || "").trim();
+    if (publicToken) headers["x-order-token"] = publicToken;
+    headers["x-host-pin"] = String(cfg.HOST_PIN || "").trim();
+
+    const res = await fetch(`${endpoint}?barState=1`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ barOpen: !!next }),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(txt || `Failed to update bar state (${res.status})`);
+    }
+
+    const json = await res.json().catch(() => null);
+    if (json && typeof json.barOpen === "boolean") {
+      barOpenCached = json.barOpen;
+    } else {
+      barOpenCached = !!next;
+    }
+
     renderBarState();
   }
 
@@ -93,8 +146,12 @@
       const btn = ensureHostButton();
       if (btn && !hostWired) {
         hostWired = true;
-        btn.addEventListener("click", () => {
-          setBarOpen(!getBarOpen());
+        btn.addEventListener("click", async () => {
+          try {
+            await setRemoteBarOpen(!getBarOpen());
+          } catch (e) {
+            setStatus(e.message || "Couldn’t update bar state.");
+          }
         });
       }
     }
@@ -117,6 +174,13 @@
   });
 
   renderBarState();
+
+  // Load shared bar state from server (guests all see the same OPEN/CLOSED)
+  refreshBarState();
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshBarState();
+  });
+  setInterval(refreshBarState, 15000);
 
   // Wire “Order” buttons to preselect drink.
   document.querySelectorAll(".orderBtn").forEach((btn) => {

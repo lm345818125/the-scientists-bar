@@ -25,6 +25,33 @@ if (!ORDER_TOKEN) {
   process.exit(1);
 }
 
+// Host pin for bar open/close controls (matches config.js HOST_PIN)
+const HOST_PIN = (process.env.ORDER_HOST_PIN || '').trim();
+
+const STATE_PATH = process.env.ORDER_STATE_PATH || path.join(__dirname, 'bar-state.json');
+const BAR_OPEN_DEFAULT = String(process.env.BAR_OPEN_DEFAULT || 'true').trim().toLowerCase() !== 'false';
+
+function loadBarState() {
+  try {
+    const raw = fs.readFileSync(STATE_PATH, 'utf8');
+    const json = JSON.parse(raw);
+    if (typeof json.barOpen === 'boolean') return json.barOpen;
+  } catch {
+    // ignore
+  }
+  return BAR_OPEN_DEFAULT;
+}
+
+function saveBarState(isOpen) {
+  try {
+    fs.writeFileSync(STATE_PATH, JSON.stringify({ barOpen: !!isOpen }, null, 2));
+  } catch (e) {
+    console.error('Failed to persist bar state:', e.message || e);
+  }
+}
+
+let barOpen = loadBarState();
+
 function loadOpenClawConfig() {
   const p = path.join(os.homedir(), '.openclaw', 'openclaw.json');
   const raw = fs.readFileSync(p, 'utf8');
@@ -68,8 +95,9 @@ function sendJson(res, status, obj) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'content-type, x-order-token',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'content-type, x-order-token, x-host-pin',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Cache-Control': 'no-store',
   });
   res.end(body);
 }
@@ -144,21 +172,58 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { ok: true });
   }
 
+  const ip = (req.socket.remoteAddress || 'unknown').replace('::ffff:', '');
+
+  // Parse URL (handles querystrings)
+  const u = new URL(req.url, 'http://localhost');
+  const pathname = u.pathname;
+
   // Tailscale Serve may strip the mounted path prefix when proxying.
   // So we accept both the mounted path and `/`.
   const allowedPaths = ['/', '/bar-orders', '/gmail-pubsub'];
 
-  // Simple reachability check (lets guests verify connectivity in a browser)
-  // Note: Funnel is currently mounted at /gmail-pubsub, and Serve may strip prefixes.
-  if (req.method === 'GET' && (req.url === '/healthz' || req.url === '/' || req.url === '/gmail-pubsub' || req.url === '/bar-orders')) {
+  // Health / reachability
+  if (req.method === 'GET' && (pathname === '/healthz' || allowedPaths.includes(pathname))) {
+    // If asked for bar state, include it.
+    if (u.searchParams.get('barState') === '1') {
+      return sendJson(res, 200, { ok: true, service: 'the-scientists-order-relay', barOpen });
+    }
     return sendJson(res, 200, { ok: true, service: 'the-scientists-order-relay' });
   }
 
-  if (req.method !== 'POST' || !allowedPaths.includes(req.url)) {
+  // Bar state (read)
+  if (req.method === 'GET' && pathname === '/bar-state') {
+    return sendJson(res, 200, { ok: true, barOpen });
+  }
+
+  // Bar state (write)
+  if (req.method === 'POST' && (pathname === '/bar-state' || (allowedPaths.includes(pathname) && u.searchParams.get('barState') === '1'))) {
+    if (!HOST_PIN) return sendJson(res, 500, { ok: false, error: 'missing_host_pin_server' });
+
+    const pin = (req.headers['x-host-pin'] || '').toString().trim();
+    if (pin !== HOST_PIN) {
+      logEvent({ event: 'host_pin_invalid', ip, url: req.url });
+      return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+    }
+
+    try {
+      const raw = await readBody(req);
+      const json = JSON.parse(raw || '{}');
+      const next = !!json.barOpen;
+      barOpen = next;
+      saveBarState(barOpen);
+      logEvent({ event: 'bar_state_set', ip, barOpen });
+      return sendJson(res, 200, { ok: true, barOpen });
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'bad_json' });
+    }
+  }
+
+  // Orders (write)
+  if (req.method !== 'POST' || !allowedPaths.includes(pathname)) {
     return sendJson(res, 404, { ok: false, error: 'not_found' });
   }
 
-  const ip = (req.socket.remoteAddress || 'unknown').replace('::ffff:', '');
   if (!rateLimitOk(ip)) {
     logEvent({ event: 'rate_limited', ip, url: req.url });
     return sendJson(res, 429, { ok: false, error: 'rate_limited' });
