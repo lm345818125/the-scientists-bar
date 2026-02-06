@@ -10,6 +10,7 @@
   const openPill = document.getElementById("openPill");
   const hostControls = document.getElementById("hostControls");
   const toggleOpenBtn = document.getElementById("toggleOpenBtn");
+  const hostSetupDetails = document.getElementById("hostSetupDetails");
 
   const STORAGE_KEY = "the-scientists:barOpen";
 
@@ -64,9 +65,11 @@
   let hostWired = false;
   function renderHostControls() {
     const enabled = isHostMode();
-    hostControls.hidden = !enabled;
 
-    if (enabled && !hostWired) {
+    if (hostControls) hostControls.hidden = !enabled;
+    if (hostSetupDetails) hostSetupDetails.hidden = !enabled;
+
+    if (enabled && !hostWired && toggleOpenBtn) {
       hostWired = true;
       toggleOpenBtn.addEventListener("click", () => {
         setBarOpen(!getBarOpen());

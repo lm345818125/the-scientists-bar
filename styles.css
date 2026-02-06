@@ -56,6 +56,12 @@ body{
   gap:10px;
   flex-wrap:wrap;
 }
+.hostControls[hidden]{
+  display:none !important;
+}
+.details[hidden]{
+  display:none !important;
+}
 .hostLabel{
   font-family:"IBM Plex Mono", ui-monospace, monospace;
   font-size:11px;
