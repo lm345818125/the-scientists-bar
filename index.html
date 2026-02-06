@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>the scientists</title>
+  <meta name="description" content="the scientists — a speakeasy cocktail menu" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=IBM+Plex+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="wrap hero">
+    <p class="kicker">members-only</p>
+
+    <div class="heroTop">
+      <h1 class="title">the scientists</h1>
+      <div class="pill" id="openPill" aria-live="polite">OPEN</div>
+    </div>
+
+    <p class="subtitle">A quiet little lab for curious palates.</p>
+
+    <div class="hostControls" id="hostControls" hidden>
+      <span class="hostLabel">host controls</span>
+      <button class="ghost" id="toggleOpenBtn" type="button">Close bar</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel" aria-labelledby="menu-title">
+      <div class="panelHeader">
+        <h2 id="menu-title">menu</h2>
+        <p class="panelNote">No prices. No rush. Just good experiments.</p>
+      </div>
+
+      <div class="menu" role="list">
+        <!-- 1 -->
+        <article class="drink" role="listitem" data-drink="The Unstable Solution" data-glass="Coupe">
+          <div class="glass" aria-hidden="true">
+            <img src="assets/glasses/coupe.svg" alt="" />
+          </div>
+          <div class="drinkBody">
+            <div class="drinkTop">
+              <h3>The Unstable Solution</h3>
+              <span class="tag">coupe</span>
+            </div>
+            <p class="desc">Gin, bergamot, lemon, and a gentle fizz — bright, clean, and suspiciously smooth.</p>
+            <p class="labnote"><span class="mono">LAB NOTE:</span> citrus-forward · aromatic · low drama</p>
+            <button class="orderBtn" type="button" data-order="The Unstable Solution">Order</button>
+          </div>
+        </article>
+
+        <!-- 2 -->
+        <article class="drink" role="listitem" data-drink="Blackbox Negroni" data-glass="Rocks">
+          <div class="glass" aria-hidden="true">
+            <img src="assets/glasses/rocks.svg" alt="" />
+          </div>
+          <div class="drinkBody">
+            <div class="drinkTop">
+              <h3>Blackbox Negroni</h3>
+              <span class="tag">rocks</span>
+            </div>
+            <p class="desc">A darker, softer Negroni riff with cacao and orange peel on the finish.</p>
+            <p class="labnote"><span class="mono">LAB NOTE:</span> bitter-sweet · silky · late-night</p>
+            <button class="orderBtn" type="button" data-order="Blackbox Negroni">Order</button>
+          </div>
+        </article>
+
+        <!-- 3 -->
+        <article class="drink" role="listitem" data-drink="The Control Group" data-glass="Nick & Nora">
+          <div class="glass" aria-hidden="true">
+            <img src="assets/glasses/nick-nora.svg" alt="" />
+          </div>
+          <div class="drinkBody">
+            <div class="drinkTop">
+              <h3>The Control Group</h3>
+              <span class="tag">nick &amp; nora</span>
+            </div>
+            <p class="desc">A crisp stirred classic profile: rye, vermouth, and a whisper of smoke.</p>
+            <p class="labnote"><span class="mono">LAB NOTE:</span> spirit-forward · balanced · minimal</p>
+            <button class="orderBtn" type="button" data-order="The Control Group">Order</button>
+          </div>
+        </article>
+
+        <!-- 4 -->
+        <article class="drink" role="listitem" data-drink="Salt & Signal" data-glass="Highball">
+          <div class="glass" aria-hidden="true">
+            <img src="assets/glasses/highball.svg" alt="" />
+          </div>
+          <div class="drinkBody">
+            <div class="drinkTop">
+              <h3>Salt &amp; Signal</h3>
+              <span class="tag">highball</span>
+            </div>
+            <p class="desc">Vodka, saline, grapefruit, and soda — sharp refreshment with a clean edge.</p>
+            <p class="labnote"><span class="mono">LAB NOTE:</span> ultra-refreshing · bright · crisp</p>
+            <button class="orderBtn" type="button" data-order="Salt & Signal">Order</button>
+          </div>
+        </article>
+
+        <!-- 5 -->
+        <article class="drink" role="listitem" data-drink="Red Shift" data-glass="Martini">
+          <div class="glass" aria-hidden="true">
+            <img src="assets/glasses/martini.svg" alt="" />
+          </div>
+          <div class="drinkBody">
+            <div class="drinkTop">
+              <h3>Red Shift</h3>
+              <span class="tag">martini</span>
+            </div>
+            <p class="desc">A dry martini-adjacent experiment with chili tincture and grapefruit oil.</p>
+            <p class="labnote"><span class="mono">LAB NOTE:</span> cold · spicy · precise</p>
+            <button class="orderBtn" type="button" data-order="Red Shift">Order</button>
+          </div>
+        </article>
+
+        <!-- 6 -->
+        <article class="drink" role="listitem" data-drink="Field Notes Fizz" data-glass="Flute">
+          <div class="glass" aria-hidden="true">
+            <img src="assets/glasses/flute.svg" alt="" />
+          </div>
+          <div class="drinkBody">
+            <div class="drinkTop">
+              <h3>Field Notes Fizz</h3>
+              <span class="tag">flute</span>
+            </div>
+            <p class="desc">Sparkling aperitif energy: elderflower, citrus, and bubbles that behave (mostly).</p>
+            <p class="labnote"><span class="mono">LAB NOTE:</span> light · floral · celebratory</p>
+            <button class="orderBtn" type="button" data-order="Field Notes Fizz">Order</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="order-title">
+      <div class="panelHeader">
+        <h2 id="order-title">order</h2>
+        <p class="panelNote">Scan, type your name, tap <span class="mono">Send</span>. That’s it.</p>
+      </div>
+
+      <form id="orderForm" class="orderForm">
+        <label>
+          <span class="label">Guest name</span>
+          <input name="guest" id="guest" autocomplete="name" placeholder="e.g., Mei" required />
+        </label>
+
+        <label>
+          <span class="label">Drink</span>
+          <select name="drink" id="drink" required>
+            <option value="" disabled selected>Select a drink…</option>
+            <option>The Unstable Solution</option>
+            <option>Blackbox Negroni</option>
+            <option>The Control Group</option>
+            <option>Salt &amp; Signal</option>
+            <option>Red Shift</option>
+            <option>Field Notes Fizz</option>
+          </select>
+        </label>
+
+        <button class="primary" type="submit">Send order</button>
+
+        <p class="small">By submitting, you’re sending an order request to the host. Nothing is charged here.</p>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </form>
+
+      <details class="details">
+        <summary>Host setup (how orders reach you)</summary>
+        <div class="detailsBody">
+          <ol>
+            <li>Set your order endpoint URL in <span class="mono">config.js</span>.</li>
+            <li>Host this folder (GitHub Pages, Netlify, or any static host).</li>
+            <li>Generate a QR code to the site URL and stick it on the bar.</li>
+          </ol>
+          <p class="small">For now the form will fall back to opening a pre-filled message if no endpoint is configured.</p>
+        </div>
+      </details>
+    </section>
+
+    <footer class="wrap footer">
+      <p class="fineprint">© the scientists · <span class="mono">members-only</span></p>
+    </footer>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

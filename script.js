@@ -1,0 +1,147 @@
+(function () {
+  const cfg = window.THE_SCIENTISTS_CONFIG || {};
+  const endpoint = (cfg.ORDER_ENDPOINT || "").trim();
+
+  const form = document.getElementById("orderForm");
+  const guestEl = document.getElementById("guest");
+  const drinkEl = document.getElementById("drink");
+  const statusEl = document.getElementById("status");
+
+  const openPill = document.getElementById("openPill");
+  const hostControls = document.getElementById("hostControls");
+  const toggleOpenBtn = document.getElementById("toggleOpenBtn");
+
+  const STORAGE_KEY = "the-scientists:barOpen";
+
+  function setStatus(msg) {
+    statusEl.textContent = msg;
+  }
+
+  function getBarOpen() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return !!cfg.BAR_OPEN_DEFAULT;
+    return raw === "true";
+  }
+
+  function setBarOpen(next) {
+    localStorage.setItem(STORAGE_KEY, String(!!next));
+    renderBarState();
+  }
+
+  function renderBarState() {
+    const isOpen = getBarOpen();
+
+    openPill.textContent = isOpen ? "OPEN" : "CLOSED";
+    openPill.classList.toggle("closed", !isOpen);
+
+    // Disable ordering when closed
+    document.querySelectorAll(".orderBtn").forEach((btn) => {
+      btn.disabled = !isOpen;
+      btn.style.opacity = isOpen ? "1" : ".45";
+      btn.style.cursor = isOpen ? "pointer" : "not-allowed";
+    });
+
+    [...form.querySelectorAll("input, select, button.primary")].forEach((el) => {
+      el.disabled = !isOpen;
+    });
+
+    toggleOpenBtn.textContent = isOpen ? "Close bar" : "Open bar";
+
+    if (!isOpen) setStatus("Bar is currently closed.");
+    else setStatus("");
+  }
+
+  function isHostMode() {
+    // Host mode is enabled by visiting:  #host-<PIN>
+    const pin = String(cfg.HOST_PIN || "").trim();
+    if (!pin) return false;
+    return window.location.hash === `#host-${pin}`;
+  }
+
+  // Host controls
+  if (isHostMode()) {
+    hostControls.hidden = false;
+    toggleOpenBtn.addEventListener("click", () => {
+      setBarOpen(!getBarOpen());
+    });
+  }
+
+  renderBarState();
+
+  // Wire “Order” buttons to preselect drink.
+  document.querySelectorAll(".orderBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!getBarOpen()) return;
+
+      const name = btn.getAttribute("data-order");
+      // select matching option
+      [...drinkEl.options].forEach((opt) => {
+        if (opt.value === name || opt.textContent === name) {
+          drinkEl.value = opt.value || opt.textContent;
+        }
+      });
+      guestEl.focus();
+      setStatus(`Selected: ${name}`);
+    });
+  });
+
+  async function sendToEndpoint(payload) {
+    const headers = { "Content-Type": "application/json" };
+    const publicToken = String(cfg.ORDER_PUBLIC_TOKEN || "").trim();
+    if (publicToken) headers["x-order-token"] = publicToken;
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Order failed (${res.status}). ${text}`);
+    }
+    return true;
+  }
+
+  function fallbackSend(payload) {
+    // Simple fallback: opens the user’s SMS app (works on most phones).
+    // You can change to mailto: or a dedicated messaging link later.
+    const msg = `the scientists order: ${payload.guest} — ${payload.drink}`;
+    // Put your number here later if you want: sms:+12166472995
+    window.location.href = `sms:?&body=${encodeURIComponent(msg)}`;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!getBarOpen()) {
+      setStatus("Bar is closed.");
+      return;
+    }
+
+    const guest = guestEl.value.trim();
+    const drink = drinkEl.value.trim();
+    if (!guest || !drink) return;
+
+    const payload = {
+      guest,
+      drink,
+      sourceUrl: window.location.href,
+      timestamp: new Date().toISOString(),
+    };
+
+    setStatus("Sending…");
+
+    try {
+      if (endpoint) {
+        await sendToEndpoint(payload);
+        setStatus(`Sent. ✅ ${guest} ordered “${drink}”.`);
+        form.reset();
+      } else {
+        setStatus("Opening message…");
+        fallbackSend(payload);
+      }
+    } catch (err) {
+      setStatus(err.message || "Something went wrong sending the order.");
+    }
+  });
+})();
