@@ -6,6 +6,7 @@
   const guestEl = document.getElementById("guest");
   const drinkEl = document.getElementById("drink");
   const statusEl = document.getElementById("status");
+  const sendOrderBtn = document.getElementById("sendOrderBtn");
 
   const openPill = document.getElementById("openPill");
   const hostControls = document.getElementById("hostControls");
@@ -159,8 +160,8 @@
     window.location.href = `sms:?&body=${encodeURIComponent(msg)}`;
   }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  async function handleSendOrder(e) {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
 
     if (!getBarOpen()) {
       setStatus("Bar is closed.");
@@ -169,7 +170,10 @@
 
     const guest = guestEl.value.trim();
     const drink = drinkEl.value.trim();
-    if (!guest || !drink) return;
+    if (!guest || !drink) {
+      setStatus("Please enter your name and select a drink.");
+      return;
+    }
 
     const payload = {
       guest,
@@ -192,5 +196,11 @@
     } catch (err) {
       setStatus(err.message || "Something went wrong sending the order.");
     }
-  });
+  }
+
+  // Clicking the button should never navigate/reload the page.
+  if (sendOrderBtn) sendOrderBtn.addEventListener("click", handleSendOrder);
+
+  // Still allow Enter key in inputs to submit.
+  form.addEventListener("submit", handleSendOrder);
 })();
