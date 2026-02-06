@@ -147,6 +147,12 @@ const server = http.createServer(async (req, res) => {
   // Tailscale Serve may strip the mounted path prefix when proxying.
   // So we accept both the mounted path and `/`.
   const allowedPaths = ['/', '/bar-orders', '/gmail-pubsub'];
+
+  // Simple reachability check (lets guests verify connectivity in a browser)
+  if (req.method === 'GET' && (req.url === '/healthz' || req.url === '/')) {
+    return sendJson(res, 200, { ok: true, service: 'the-scientists-order-relay' });
+  }
+
   if (req.method !== 'POST' || !allowedPaths.includes(req.url)) {
     return sendJson(res, 404, { ok: false, error: 'not_found' });
   }
