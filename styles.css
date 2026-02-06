@@ -50,12 +50,16 @@ body{
 
 .hostControls{
   margin-top:14px;
-  display:flex;
+  display:none; /* hidden by default in guest mode */
   justify-content:center;
   align-items:center;
   gap:10px;
   flex-wrap:wrap;
 }
+body.hostMode .hostControls{
+  display:flex;
+}
+/* Extra safety: if something still toggles [hidden], keep it hidden */
 .hostControls[hidden]{
   display:none !important;
 }

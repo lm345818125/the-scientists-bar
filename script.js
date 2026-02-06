@@ -83,6 +83,8 @@
   function renderHostControls() {
     const enabled = isHostMode();
 
+    document.body.classList.toggle("hostMode", enabled);
+
     if (hostControls) hostControls.hidden = !enabled;
     if (hostSetupDetails) hostSetupDetails.hidden = !enabled;
 
