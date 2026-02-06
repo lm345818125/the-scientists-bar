@@ -53,18 +53,32 @@
 
   function isHostMode() {
     // Host mode is enabled by visiting:  #host-<PIN>
+    // Make it resilient: accept case differences and react to hash changes.
     const pin = String(cfg.HOST_PIN || "").trim();
     if (!pin) return false;
-    return window.location.hash === `#host-${pin}`;
+
+    const hash = decodeURIComponent(String(window.location.hash || "")).trim();
+    return hash.toLowerCase() === `#host-${pin}`.toLowerCase();
   }
 
-  // Host controls
-  if (isHostMode()) {
-    hostControls.hidden = false;
-    toggleOpenBtn.addEventListener("click", () => {
-      setBarOpen(!getBarOpen());
-    });
+  let hostWired = false;
+  function renderHostControls() {
+    const enabled = isHostMode();
+    hostControls.hidden = !enabled;
+
+    if (enabled && !hostWired) {
+      hostWired = true;
+      toggleOpenBtn.addEventListener("click", () => {
+        setBarOpen(!getBarOpen());
+      });
+    }
   }
+
+  // Host controls (initial + when URL hash changes)
+  renderHostControls();
+  window.addEventListener("hashchange", () => {
+    renderHostControls();
+  });
 
   renderBarState();
 
